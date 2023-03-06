@@ -1,0 +1,4 @@
+pymoto
+numpy
+scipy>=1.7
+matplotlib
