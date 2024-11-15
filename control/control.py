@@ -184,7 +184,7 @@ class FitCirclePureParticipation(pym.Module):
             self.max_radius = (max_diameter/2)
 
     def _response(self, G, ss, poles, vl, vr):
-        radius = np.zeros_like(G, dtype=np.float)
+        radius = np.zeros_like(G, dtype=float)
         midpts = np.zeros_like(G)
 
         self.freqlist = np.asarray(self.s_freq.state)
@@ -250,7 +250,7 @@ class FitCirclePureParticipation(pym.Module):
                 dmid[self.which[1], self.which[0], ...] = dmidpts
         dmidpts = dmid
 
-        drad = np.zeros_like(self.sig_in[0].state, dtype=np.float)
+        drad = np.zeros_like(self.sig_in[0].state, dtype=float)
         if dradius is not None:
             if self.which is None:
                 drad[...] = dradius
@@ -396,7 +396,7 @@ class DistToArea2(pym.Module):
         self.isel[np.logical_and(sel_line1 < 0, sel_line2 < 0)] = 0  # Condition for point
         self.isel[np.logical_and(self.isel < 0, dist_line1 > dist_line2)] = 1  # Condition for line 1
         self.isel[np.logical_and(self.isel < 0, dist_line1 <= dist_line2)] = 2  # Condition for line 2
-        assert np.alltrue(self.isel >= 0)
+        assert np.all(self.isel >= 0)
 
         # Get the correct distance
         dist = np.zeros_like(radius)
@@ -980,4 +980,4 @@ def floodfill_py(domain: pym.DomainDefinition, x: np.ndarray, istart: np.ndarray
         active_list = np.concatenate((active_list, next_els))
         is_processed[next_els] = True
 
-    assert np.alltrue(is_processed)
+    assert np.all(is_processed)

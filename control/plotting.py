@@ -84,7 +84,7 @@ class GeneralPlot:
         if self.lines is not None:
             return
         self.shape = shape
-        self.lines = np.ndarray(shape=self.shape, dtype=np.object)
+        self.lines = np.ndarray(shape=self.shape, dtype=object)
         for (idx, line) in np.ndenumerate(self.lines):
             arguments = self.get_args(idx)
             kwarguments = self.get_kwargs(idx)
@@ -171,7 +171,7 @@ class UpdatePlotCircle(GeneralPlot):
             self.shape = shape[:-1]
         else:
             self.shape = shape
-        self.circles = np.ndarray(shape=shape, dtype=np.object)
+        self.circles = np.ndarray(shape=shape, dtype=object)
         for (idx, circ) in np.ndenumerate(self.circles):
             # Parse arguments
             arguments = self.get_args(idx)
@@ -271,7 +271,7 @@ class PlotNyquist(pym.Module):
         self.ax.set_ylabel('Imag')
         if stab_lim is not None:
             UpdatePlotCircle(self.ax, -1.0, 1/(10**(stab_lim/20)), label=f"{stab_lim} dB", fill=False, linestyle='--', color='k').update()
-            UpdatePlotXY(self.ax, 'k+', complex_data=-1).update()
+            UpdatePlotXY(self.ax, 'k+', complex_data=np.array([-1])).update()
         self.draw()
         self.leg = False
 

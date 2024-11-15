@@ -329,10 +329,12 @@ class Eigensolve(pym.Module):
                 A = (self.K - self.sigma*self.M).tocsc()
 
             if not hasattr(self, 'Kinv') or self.Kinv is None:
-                self.Kinv = pym.SolverSparseLU()
+                self.Kinv = pym.solvers.SolverSparseLU()
 
             self.Kinv.update(A)
-            KinvOp = spspla.LinearOperator(A.shape, matvec=self.Kinv.solve, rmatvec=self.Kinv.adjoint)
+            KinvOp = spspla.LinearOperator(A.shape,
+                                           matvec=lambda rhs: self.Kinv.solve(rhs, trans='N'),
+                                           rmatvec=lambda rhs: self.Kinv.solve(rhs, trans='T'))
 
             # Solve the eigenvalue problem
             if self.ishermitian:
@@ -541,19 +543,17 @@ class Eigensolve(pym.Module):
     def get_adjoint_solver(self, iset, which='right'):
         inds = self.eigval_sets[iset]
         isleft = which.lower() == 'left'
-        islv = 0 if isleft else 1
+        islv = 0 if isleft else 1  # Left or right eigenvalue problem
         n_multi = len(inds)
         if self.adj_solvers[iset] is None:
-            # default_solver = pym.SolverSparseLU if self.issparse else pym.SolverDenseLU
-            #                          Left adjoint             Right adjoint (updated, solver)
-            # self.adj_solvers[iset] = [[False, default_solver()], [False, default_solver()]]
+            # Data structure for each eigenmode, left and right eigenvalue problem versions, with first a flag if it
+            # needs updating, and secondly the solver itself
+            #                          Left adjoint  Right adjoint (updated, solver)
+            self.adj_solvers[iset] = [[False, None],[False, None]]
 
-            self.adj_solvers[iset] = [[False, pym.SolverSparsePardiso(symmetric=True) if self.issparse else pym.SolverDenseLU()],
-                                      [False, pym.SolverSparsePardiso(symmetric=True) if self.issparse else pym.SolverDenseLU()]]
-
-        #
+        is_updated = self.adj_solvers[iset][islv][0]
         solver = self.adj_solvers[iset][islv][1]
-        if not self.adj_solvers[iset][islv][0]:
+        if not is_updated:
             # Requires updating
             lam = self.lams[inds[0]]
             eigvec = self.vecL[:, inds] if isleft else self.vecR[:, inds]
@@ -567,8 +567,12 @@ class Eigensolve(pym.Module):
             else:
                 mat = np.vstack((np.hstack((pencil, -Mv)),
                                  np.hstack((-Mv.T, np.zeros((n_multi, n_multi))))))
+            if solver is None:
+                # Initialize a new solver
+                solver = pym.solvers.auto_determine_solver(mat)
+                self.adj_solvers[iset][islv][1] = solver
             solver.update(mat)
-            self.adj_solvers[iset][islv][0] = True
+            self.adj_solvers[iset][islv][0] = True  # Set the flag to updated
 
         return solver
 
